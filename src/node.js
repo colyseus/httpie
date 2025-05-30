@@ -13,7 +13,7 @@ function toError(rej, res, err) {
 
 export function send(method, uri, opts={}) {
 	return new Promise((res, rej) => {
-		let req, tmp, out = '';
+		let req, tmp, aborted, timedout = false, out = '';
 		let { redirect=true } = opts;
 		opts.method = method;
 
@@ -49,12 +49,23 @@ export function send(method, uri, opts={}) {
 			});
 		});
 
-		req.on('timeout', req.abort);
+		req.on('timeout', function() {
+			timedout = true;
+			req.abort();
+		});
+
 		req.on('error', err => {
-			// Node 11.x ~> boolean, else timestamp
-			err.timeout = req.aborted;
+			err.timeout = timedout;
+			err.aborted = aborted;
 			rej(err);
 		});
+
+		if (opts.signal) {
+			opts.signal.addEventListener('abort', function () {
+				aborted = true;
+				req.destroy();
+			});
+		}
 
 		if (opts.body) {
 			tmp = typeof opts.body === 'object' && !Buffer.isBuffer(opts.body);

@@ -8,6 +8,7 @@ export interface Options {
 	redirect: boolean;
 	timeout: number;
 	body: any;
+	signal: AbortSignal;
 }
 
 export interface Response<T = any> {

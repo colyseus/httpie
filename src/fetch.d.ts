@@ -10,6 +10,7 @@ export interface Options extends Partial<RequestInit> {
 	withCredentials: boolean;
 	timeout: number;
 	body: any;
+	signal: AbortSignal;
 }
 
 export function send<T = any>(method: string, uri: URL | string, opts?: Partial<Options>): Promise<Response<T>>;

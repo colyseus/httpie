@@ -17,7 +17,12 @@ export function send(method, uri, opts) {
 		req.ontimeout = req.onerror = function (err) {
 			err.timeout = err.type == 'timeout';
 			rej(err);
-		}
+		};
+
+		req.onabort = function (err) {
+			err.aborted = true;
+			rej(err);
+		};
 
 		req.open(method, uri.href || uri);
 
@@ -57,6 +62,12 @@ export function send(method, uri, opts) {
 		}
 
 		req.send(str);
+
+		if (opts.signal) {
+			opts.signal.addEventListener('abort', function () {
+				req.abort();
+			});
+		}
 	});
 }
 

@@ -6,7 +6,7 @@ function apply(src, tar) {
 
 export function send(method, uri, opts) {
 	opts = opts || {};
-	var timer, ctrl, tmp=opts.body;
+	var timer, aborted, timedout = false, ctrl, tmp=opts.body;
 
 	opts.method = method;
 	opts.headers = opts.headers || {};
@@ -23,15 +23,24 @@ export function send(method, uri, opts) {
 	}
 
 	if (opts.timeout) {
-		ctrl = new AbortController;
-		opts.signal = ctrl.signal;
-		timer = setTimeout(ctrl.abort, opts.timeout);
+		if (!opts.signal) {
+			ctrl = new AbortController;
+			opts.signal = ctrl.signal;
+		}
+		timer = setTimeout(function() {
+			timedout = true;
+			ctrl.signal.dispatchEvent(new Event('abort'));
+		}, opts.timeout);
+	}
+
+	if (opts.signal) {
+		opts.signal.addEventListener('abort', function () {
+			aborted = true;
+		});
 	}
 
 	return new Promise((res, rej) => {
 		fetch(uri, opts).then((rr, reply) => {
-			clearTimeout(timer);
-
 			apply(rr, rr); //=> rr.headers
 			reply = rr.status >= 400 ? rej : res;
 
@@ -51,8 +60,11 @@ export function send(method, uri, opts) {
 				});
 			}
 		}).catch(err => {
-			err.timeout = ctrl && ctrl.signal.aborted;
+			err.timeout = timedout;
+			err.aborted = aborted && !timedout;
 			rej(err);
+		}).finally(() => {
+			clearTimeout(timer);
 		});
 	});
 }

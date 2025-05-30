@@ -11,6 +11,7 @@ export interface Options {
 	redirect: boolean;
 	timeout: number;
 	body: any;
+	signal: AbortSignal;
 }
 
 export function send<T = any>(method: string, uri: URL | Url | string, opts?: Partial<Options>): Promise<Response<T>>;
