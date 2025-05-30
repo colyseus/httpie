@@ -4,6 +4,8 @@ import * as assert from 'uvu/assert';
 import { server, isResponse } from './utils';
 import * as httpie from '../src/node';
 
+const reqresHeaders = { 'x-api-key': 'reqres-free-v1' };
+
 test('exports', () => {
 	assert.type(httpie, 'object');
 
@@ -16,7 +18,7 @@ test('exports', () => {
 });
 
 test('GET (200)', async () => {
-	let res = await httpie.get('https://reqres.in/api/users/2');
+	let res = await httpie.get('https://reqres.in/api/users/2', { headers: { ...reqresHeaders } });
 	isResponse(res, 200);
 
 	let data = res.data;
@@ -27,7 +29,7 @@ test('GET (200)', async () => {
 
 test('GET (404)', async () => {
 	try {
-		await httpie.get('https://reqres.in/api/users/23');
+		await httpie.get('https://reqres.in/api/users/23', { headers: { ...reqresHeaders } });
 		assert.unreachable('should have thrown error');
 	} catch (err) {
 		assert.instance(err, Error, '~> returns a true Error instance');
@@ -43,7 +45,7 @@ test('POST (201)', async () => {
     job: 'leader'
 	};
 
-	let res = await httpie.post('https://reqres.in/api/users', { body });
+	let res = await httpie.post('https://reqres.in/api/users', { body, headers: { ...reqresHeaders } });
 
 	isResponse(res, 201);
 	assert.ok(res.data.id, '~~> created item w/ "id" value');
@@ -58,7 +60,7 @@ test('PUT (200)', async () => {
     job: 'zion resident'
 	};
 
-	let res = await httpie.put('https://reqres.in/api/users/2', { body });
+	let res = await httpie.put('https://reqres.in/api/users/2', { body, headers: { ...reqresHeaders } });
 
 	isResponse(res, 200);
 	assert.is(res.data.job, body.job, '~~> created item w/ "job" value');
@@ -72,7 +74,7 @@ test('PATCH (200)', async () => {
     job: 'rebel'
 	};
 
-	let res = await httpie.patch('https://reqres.in/api/users/2', { body });
+	let res = await httpie.patch('https://reqres.in/api/users/2', { body, headers: { ...reqresHeaders } });
 
 	isResponse(res, 200);
 	assert.is(res.data.job, body.job, '~~> created item w/ "job" value');
@@ -81,19 +83,19 @@ test('PATCH (200)', async () => {
 });
 
 test('DELETE (204)', async () => {
-	let res = await httpie.del('https://reqres.in/api/users/2');
+	let res = await httpie.del('https://reqres.in/api/users/2', { headers: { ...reqresHeaders } });
 	assert.is(res.statusCode, 204);
 	assert.is(res.data, '');
 });
 
 test('GET (HTTP -> HTTPS)', async () => {
-	let res = await httpie.get('http://reqres.in/api/users');
+	let res = await httpie.get('http://reqres.in/api/users', { headers: { ...reqresHeaders } });
 	assert.is(res.req.agent.protocol, 'https:', '~> follow-up request with HTTPS');
 	isResponse(res, 200);
 });
 
 test('GET (301 = redirect:false)', async () => {
-	let res = await httpie.get('http://reqres.in/api/users', { redirect:0 });
+	let res = await httpie.get('http://reqres.in/api/users', { redirect: 0, headers: { ...reqresHeaders } });
 	assert.is(res.statusCode, 301, '~> statusCode = 301');
 	assert.is(res.statusMessage, 'Moved Permanently', '~> "Moved Permanently"');
 	assert.is(res.headers.location, 'https://reqres.in/api/users', '~> has "Location" header');
@@ -102,7 +104,7 @@ test('GET (301 = redirect:false)', async () => {
 
 test('GET (delay)', async () => {
 	let now = Date.now();
-	let res = await httpie.send('GET', 'https://reqres.in/api/users?delay=5');
+	let res = await httpie.send('GET', 'https://reqres.in/api/users?delay=5', { headers: { ...reqresHeaders } });
 	assert.is(res.statusCode, 200, '~> res.statusCode = 200');
 	assert.type(res.data, 'object', '~> res.data is an object');
 	assert.ok(Date.now() - now >= 5e3, '~> waited at least 5 seconds');
@@ -111,7 +113,7 @@ test('GET (delay)', async () => {
 test('POST (string body w/ object url)', async () => {
 	const body = 'peter@klaven';
 	const uri = parse('https://reqres.in/api/login');
-	await httpie.post(uri, { body }).catch(err => {
+	await httpie.post(uri, { body, headers: { ...reqresHeaders } }).catch(err => {
 		assert.is(err.message, 'Bad Request');
 		isResponse(err, 400, {
 			error: 'Missing email or username'
@@ -120,7 +122,7 @@ test('POST (string body w/ object url)', async () => {
 });
 
 test('custom headers', async () => {
-	let headers = { 'X-FOO': 'BAR123' };
+	let headers = { 'X-FOO': 'BAR123', ...reqresHeaders };
 	let res = await httpie.get('https://reqres.in/api/users', { headers });
 	let sent = res.req.getHeader('x-foo');
 
@@ -134,7 +136,7 @@ function reviver(key, val) {
 }
 
 test('GET (reviver)', async () => {
-	let res = await httpie.get('https://reqres.in/api/users', { reviver });
+	let res = await httpie.get('https://reqres.in/api/users', { reviver, headers: { ...reqresHeaders } });
 	assert.is(res.statusCode, 200, '~> statusCode = 200');
 
 	assert.is(res.data.per_page, undefined, '~> removed "per_page" key');
@@ -144,7 +146,7 @@ test('GET (reviver)', async () => {
 });
 
 test('GET (reviver w/ redirect)', async () => {
-	let res = await httpie.get('http://reqres.in/api/users', { reviver });
+	let res = await httpie.get('http://reqres.in/api/users', { reviver, headers: { ...reqresHeaders } });
 	assert.is(res.req.agent.protocol, 'https:', '~> follow-up request with HTTPS');
 	assert.is(res.statusCode, 200, '~> statusCode = 200');
 
@@ -156,12 +158,26 @@ test('GET (reviver w/ redirect)', async () => {
 
 test('via Url (legacy)', async () => {
 	let foo = parse('https://reqres.in/api/users/2');
-	isResponse(await httpie.get(foo), 200);
+	isResponse(await httpie.get(foo, { headers: { ...reqresHeaders } }), 200);
 });
 
 test('via URL (WHATWG)', async () => {
 	let foo = new URL('https://reqres.in/api/users/2');
-	isResponse(await httpie.get(foo), 200);
+	isResponse(await httpie.get(foo, { headers: { ...reqresHeaders } }), 200);
+});
+
+test('Error: abort', async () => {
+	let ctrl = new AbortController();
+	let ctx = await server();
+
+	setInterval(() => ctrl.abort(), 0); // abort immediately
+
+	await httpie.get(`http://localhost:${ctx.port}/any`, { signal: ctrl.signal }).catch(err => {
+		assert.ok(err.message.includes('operation was aborted'), '~> had "operation was aborted" message');
+		assert.is(err.timeout, false, '~> timeout = false');
+		assert.is(err.aborted, true, '~> aborted = true');
+		ctx.close();
+	});
 });
 
 test('Error: Invalid JSON', async () => {
@@ -181,7 +197,7 @@ test('Error: Invalid JSON', async () => {
 });
 
 test('Error: timeout', async () => {
-	await httpie.send('GET', 'https://reqres.in/api/users?delay=3', { timeout:1000 }).catch(err => {
+	await httpie.send('GET', 'https://reqres.in/api/users?delay=3', { timeout: 1000, headers: { ...reqresHeaders } }).catch(err => {
 		assert.instance(err, Error, '~> caught Error');
 		assert.is(err.message, 'socket hang up', '~> had "socket hang up" message');
 		assert.ok(err.timeout !== void 0, '~> added `timeout` property');
