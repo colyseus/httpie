@@ -12,24 +12,29 @@
   "license": "MIT",
   "exports": {
     ".": {
+      "types": "./index.d.ts",
       "worker": "./fetch/index.mjs",
       "browser": "./xhr/index.mjs",
       "import": "./node/index.mjs",
       "require": "./node/index.js"
     },
     "./node": {
+      "types": "./node/index.d.ts",
       "import": "./node/index.mjs",
       "require": "./node/index.js"
     },
     "./fetch": {
+      "types": "./fetch/index.d.ts",
       "import": "./fetch/index.mjs",
       "require": "./fetch/index.js"
     },
     "./browser": {
+      "types": "./xhr/index.d.ts",
       "import": "./xhr/index.mjs",
       "require": "./xhr/index.js"
     },
     "./xhr": {
+      "types": "./xhr/index.d.ts",
       "import": "./xhr/index.mjs",
       "require": "./xhr/index.js"
     },
